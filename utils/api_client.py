@@ -3,11 +3,11 @@ import streamlit as st
 import os
 
 class PageSpeedInsightsAPI:
-    def __init__(self):
+    def __init__(self, api_key=None):
         self.base_url = "https://www.googleapis.com/pagespeedonline/v5/runPagespeed"
-        self.api_key = os.environ.get("PAGESPEED_API_KEY")
+        self.api_key = api_key
         if not self.api_key:
-            raise Exception("PageSpeed API key not found. Please set the PAGESPEED_API_KEY environment variable.")
+            raise Exception("API key not provided. Please provide a valid PageSpeed Insights API key.")
 
         # Define a legitimate browser user agent
         self.headers = {
@@ -102,7 +102,13 @@ class PageSpeedInsightsAPI:
             return result
 
         except requests.exceptions.RequestException as e:
-            raise Exception(f"Failed to fetch metrics: {str(e)}")
+            # Check for common API key errors
+            if response.status_code == 400 and 'API key not valid' in str(e):
+                raise Exception("Invalid API key. Please check your PageSpeed Insights API key.")
+            elif response.status_code == 403:
+                raise Exception("API key error: Access forbidden. Please ensure your API key has the necessary permissions.")
+            else:
+                raise Exception(f"Failed to fetch metrics: {str(e)}")
         except KeyError as e:
             raise Exception(f"Invalid API response format: {str(e)}")
         except Exception as e:
