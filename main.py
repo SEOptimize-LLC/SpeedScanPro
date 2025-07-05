@@ -1,7 +1,6 @@
 import streamlit as st
 from utils.api_client import PageSpeedInsightsAPI
 from utils.seo_analyzer import SEOAnalyzer
-from components.header import render_header
 from components.metrics_display import display_metrics
 from components.report_generator import generate_report
 from components.bulk_upload import render_upload_section
@@ -85,19 +84,28 @@ def export_results(results: List[Dict], format: str):
     if format == 'json':
         return json.dumps(results, indent=2)
 
-    # Flatten results for CSV/Excel
+    # Flatten results for CSV/Excel with safe score handling
     flattened_data = []
     for result in results:
+        def get_score(data, category):
+            try:
+                score = data['lighthouse_result']['categories'][category]['score']
+                if score is None:
+                    return 'N/A'
+                return score * 100 if score > 0 else 0
+            except (KeyError, TypeError):
+                return 'N/A'
+        
         row = {
             'URL': result['url'],
-            'Desktop Performance': result['desktop']['lighthouse_result']['categories']['performance']['score'] * 100,
-            'Desktop Accessibility': result['desktop']['lighthouse_result']['categories']['accessibility']['score'] * 100,
-            'Desktop Best Practices': result['desktop']['lighthouse_result']['categories']['best-practices']['score'] * 100,
-            'Desktop SEO': result['desktop']['lighthouse_result']['categories']['seo']['score'] * 100,
-            'Mobile Performance': result['mobile']['lighthouse_result']['categories']['performance']['score'] * 100,
-            'Mobile Accessibility': result['mobile']['lighthouse_result']['categories']['accessibility']['score'] * 100,
-            'Mobile Best Practices': result['mobile']['lighthouse_result']['categories']['best-practices']['score'] * 100,
-            'Mobile SEO': result['mobile']['lighthouse_result']['categories']['seo']['score'] * 100
+            'Desktop Performance': get_score(result['desktop'], 'performance'),
+            'Desktop Accessibility': get_score(result['desktop'], 'accessibility'),
+            'Desktop Best Practices': get_score(result['desktop'], 'best-practices'),
+            'Desktop SEO': get_score(result['desktop'], 'seo'),
+            'Mobile Performance': get_score(result['mobile'], 'performance'),
+            'Mobile Accessibility': get_score(result['mobile'], 'accessibility'),
+            'Mobile Best Practices': get_score(result['mobile'], 'best-practices'),
+            'Mobile SEO': get_score(result['mobile'], 'seo')
         }
         flattened_data.append(row)
 
