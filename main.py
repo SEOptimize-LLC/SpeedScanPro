@@ -14,74 +14,49 @@ from typing import List, Dict
 import io
 
 # Page configuration
-st.set_page_config(page_title="SEO Audit Tool",
-                   page_icon="🔍",
-                   layout="wide",
-                   initial_sidebar_state="collapsed")
+st.set_page_config(
+    page_title="SEO Audit Tool",
+    page_icon="🔍",
+    layout="wide",
+    initial_sidebar_state="collapsed"
+)
 
-# Custom styling
-st.markdown("""
-    <style>
-    .main {
-        background: linear-gradient(135deg, #0E1117 0%, #1E2329 100%);
-    }
-    .stDataFrame {
-        background: transparent !important;
-        border-radius: 8px !important;
-    }
-    .stDataFrame td, .stDataFrame th {
-        color: white !important;
-        background: transparent !important;
-    }
-    div[data-testid="stMarkdown"] {
-        background: transparent !important;
-    }
-    div[data-testid="stTable"] {
-        background: transparent !important;
-    }
-    .stTable td, .stTable th {
-        background: transparent !important;
-    }
-    .stTabs [data-baseweb="tab-list"] {
-        gap: 8px;
-    }
-    .stTabs [data-baseweb="tab"] {
-        background-color: rgba(30, 35, 41, 0.75);
-        border-radius: 4px;
-        color: white;
-        padding: 8px 16px;
-    }
-    .stTabs [aria-selected="true"] {
-        background-color: #FF4B4B !important;
-    }
-    </style>
-""",
-            unsafe_allow_html=True)
-
-# Custom CSS for button
+# Light theme styling
 st.markdown("""
     <style>
     .stButton > button {
-        background: linear-gradient(45deg, #FF4B4B, #FF7676);
+        background-color: #FF4B4B;
         color: white;
         padding: 0.75rem 2rem;
         font-size: 1.2em;
         border: none;
         border-radius: 10px;
-        box-shadow: 0 4px 15px rgba(255, 75, 75, 0.3);
-        transform: translateY(0);
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         transition: all 0.3s ease;
     }
     .stButton > button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(255, 75, 75, 0.4);
+        background-color: #FF6B6B;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
     }
-    .stButton > button:active {
-        transform: translateY(1px);
+    .stTextInput > div > div > input {
+        border-radius: 8px;
+        border: 1px solid #ddd;
+        padding: 0.5rem;
+    }
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 8px;
+    }
+    .stTabs [data-baseweb="tab"] {
+        background-color: #f0f2f6;
+        border-radius: 4px;
+        padding: 8px 16px;
+    }
+    .stTabs [aria-selected="true"] {
+        background-color: #FF4B4B !important;
+        color: white !important;
     }
     </style>
-""",
-            unsafe_allow_html=True)
+""", unsafe_allow_html=True)
 
 
 @st.cache_data(ttl=3600)
@@ -114,32 +89,15 @@ def export_results(results: List[Dict], format: str):
     flattened_data = []
     for result in results:
         row = {
-            'URL':
-            result['url'],
-            'Desktop Performance':
-            result['desktop']['lighthouse_result']['categories']['performance']
-            ['score'] * 100,
-            'Desktop Accessibility':
-            result['desktop']['lighthouse_result']['categories']
-            ['accessibility']['score'] * 100,
-            'Desktop Best Practices':
-            result['desktop']['lighthouse_result']['categories']
-            ['best-practices']['score'] * 100,
-            'Desktop SEO':
-            result['desktop']['lighthouse_result']['categories']['seo']
-            ['score'] * 100,
-            'Mobile Performance':
-            result['mobile']['lighthouse_result']['categories']['performance']
-            ['score'] * 100,
-            'Mobile Accessibility':
-            result['mobile']['lighthouse_result']['categories']
-            ['accessibility']['score'] * 100,
-            'Mobile Best Practices':
-            result['mobile']['lighthouse_result']['categories']
-            ['best-practices']['score'] * 100,
-            'Mobile SEO':
-            result['mobile']['lighthouse_result']['categories']['seo']['score']
-            * 100
+            'URL': result['url'],
+            'Desktop Performance': result['desktop']['lighthouse_result']['categories']['performance']['score'] * 100,
+            'Desktop Accessibility': result['desktop']['lighthouse_result']['categories']['accessibility']['score'] * 100,
+            'Desktop Best Practices': result['desktop']['lighthouse_result']['categories']['best-practices']['score'] * 100,
+            'Desktop SEO': result['desktop']['lighthouse_result']['categories']['seo']['score'] * 100,
+            'Mobile Performance': result['mobile']['lighthouse_result']['categories']['performance']['score'] * 100,
+            'Mobile Accessibility': result['mobile']['lighthouse_result']['categories']['accessibility']['score'] * 100,
+            'Mobile Best Practices': result['mobile']['lighthouse_result']['categories']['best-practices']['score'] * 100,
+            'Mobile SEO': result['mobile']['lighthouse_result']['categories']['seo']['score'] * 100
         }
         flattened_data.append(row)
 
@@ -155,12 +113,39 @@ def export_results(results: List[Dict], format: str):
 
 
 def main():
-    render_header()
+    # Simple header
+    st.title("🔍 SEO Audit Tool")
+    st.markdown("---")
 
+    # API Key input
+    api_key = st.text_input(
+        "Enter your Google PageSpeed Insights API Key:",
+        type="password",
+        placeholder="Your API key here...",
+        help="Get your API key from Google Cloud Console"
+    )
+
+    if not api_key:
+        st.info("👆 Please enter your PageSpeed Insights API key to continue")
+        st.markdown("""
+        **How to get an API key:**
+        1. Visit [Google Cloud Console](https://console.cloud.google.com/)
+        2. Create a new project or select existing one
+        3. Enable PageSpeed Insights API
+        4. Create credentials (API Key)
+        5. Copy and paste the key above
+        """)
+        return
+
+    # URL input section
+    st.subheader("Enter URLs to Analyze")
+    
     # Get URLs from bulk upload or single input
     urls = render_upload_section()
-    single_url = st.text_input("Or analyze a single URL:",
-                               placeholder="https://example.com")
+    single_url = st.text_input(
+        "Or analyze a single URL:",
+        placeholder="https://example.com"
+    )
 
     if single_url:
         urls = [single_url]
@@ -178,8 +163,8 @@ def main():
 
         with st.spinner("🔍 Analyzing websites..."):
             try:
-                # Initialize API client and analyzer
-                api_client = PageSpeedInsightsAPI()
+                # Initialize API client with the provided API key
+                api_client = PageSpeedInsightsAPI(api_key=api_key)
                 all_results = []
 
                 progress_bar = st.progress(0)
@@ -189,62 +174,59 @@ def main():
                             result = analyze_url(api_client, url)
                             all_results.append(result)
                             # Show individual results
-                            display_metrics(result['desktop'],
-                                            result['mobile'])
+                            display_metrics(result['desktop'], result['mobile'])
                         except Exception as e:
                             st.error(f"Error analyzing {url}: {str(e)}")
                     progress_bar.progress((i + 1) / len(urls))
 
                 if all_results:
-                    st.success(
-                        f"✅ Analysis completed for {len(all_results)} URLs")
+                    st.success(f"✅ Analysis completed for {len(all_results)} URLs")
 
                     # Export options
                     st.subheader("Export Results")
-                    export_format = st.selectbox("Choose export format:",
-                                                 ['json', 'csv', 'excel'])
+                    export_format = st.selectbox(
+                        "Choose export format:",
+                        ['json', 'csv', 'excel']
+                    )
 
                     export_data = export_results(all_results, export_format)
 
                     if export_format == 'json':
-                        st.download_button("📥 Download JSON Report",
-                                           export_data,
-                                           file_name="seo_audit_results.json",
-                                           mime="application/json")
+                        st.download_button(
+                            "📥 Download JSON Report",
+                            export_data,
+                            file_name="seo_audit_results.json",
+                            mime="application/json"
+                        )
                     elif export_format == 'csv':
-                        st.download_button("📥 Download CSV Report",
-                                           export_data,
-                                           file_name="seo_audit_results.csv",
-                                           mime="text/csv")
+                        st.download_button(
+                            "📥 Download CSV Report",
+                            export_data,
+                            file_name="seo_audit_results.csv",
+                            mime="text/csv"
+                        )
                     else:  # excel
                         st.download_button(
                             "📥 Download Excel Report",
                             export_data,
                             file_name="seo_audit_results.xlsx",
-                            mime=
-                            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                         )
 
             except Exception as e:
                 error_msg = str(e)
-                if "API key not found" in error_msg:
-                    st.error(
-                        "⚠️ Configuration Error: The PageSpeed Insights API key is not properly set up. Please contact support."
-                    )
+                if "API key not found" in error_msg or "Invalid API key" in error_msg:
+                    st.error("⚠️ Invalid API Key: Please check your PageSpeed Insights API key and try again.")
                 elif "Failed to fetch metrics" in error_msg:
-                    st.error(
-                        "🌐 Network Error: Unable to fetch data from Google PageSpeed Insights. Please try again later."
-                    )
+                    st.error("🌐 Network Error: Unable to fetch data from Google PageSpeed Insights. Please try again later.")
                 elif "Invalid API response" in error_msg:
-                    st.error(
-                        "🚫 API Error: Received invalid response from PageSpeed Insights. Please try again later."
-                    )
+                    st.error("🚫 API Error: Received invalid response from PageSpeed Insights. Please try again later.")
                 else:
                     st.error(f"❌ An unexpected error occurred: {error_msg}")
 
                 # Log the full error for debugging
-                st.write("Debug information:")
-                st.code(traceback.format_exc())
+                with st.expander("Debug information"):
+                    st.code(traceback.format_exc())
 
 
 if __name__ == "__main__":
